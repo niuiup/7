@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #viewer { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="viewer"></div>
+
+    <script>
+        let scene, camera, renderer, model;
+
+        function init() {
+            const viewer = document.getElementById('viewer');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            viewer.appendChild(renderer.domElement);
+
+            const light = new THREE.AmbientLight(0xffffff, 1);
+            scene.add(light);
+
+            camera.position.z = 5;
+
+            loadModel();
+            animate();
+        }
+
+        function loadModel() {
+            const loader = new THREE.GLTFLoader();
+            const filePath = './model.glb'; // Относительный путь к файлу
+
+            loader.load(filePath, function (gltf) {
+                if (model) scene.remove(model);
+                model = gltf.scene;
+
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center);
+
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                model.scale.setScalar(2 / maxDim);
+
+                scene.add(model);
+            }, undefined, function (error) {
+                console.error('Ошибка загрузки модели:', error);
+                alert('Не удалось загрузить модель. Проверьте путь к файлу.');
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (model) model.rotation.y += 0.01;
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>
